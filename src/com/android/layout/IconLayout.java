@@ -22,6 +22,7 @@ import com.android.adsTask.windowManager.AdsWindowManager;
 import com.android.callback.OnDownloadListener;
 import com.android.callback.OnNetWorkListener;
 import com.android.constant.AdsConstant;
+import com.android.constant.ErrorCodeConstant;
 import com.android.network.FileDownloadThread;
 import com.android.network.json.ReportJSON;
 import com.android.network.model.ReportInfo;
@@ -129,19 +130,25 @@ public class IconLayout extends FrameLayout {
 
                                 @Override
                                 public void onDownloadFinished(int state, String fileId, String filePath, int callback) {
-                                    //To change body of implemented methods use File | Settings | File Templates.
+                                    if (state == -1) {
+                                        //Apk下载失败，回报任务结果，getTaskState 1  showState 1 downState 1 installState 0 errorCode 10002
+                                        ReportInfo reportInfo = new ReportInfo();
 
+                                        reportInfo.getTaskState = 1;
+                                        reportInfo.showState = 1;
+                                        reportInfo.downState = 1;
+                                        reportInfo.installState = 0;
+                                        reportInfo.errorCode = ErrorCodeConstant.APKDOWNLOADFAILURE;
 
+                                        ReportTaskStatusUtil.reportTaskStatus(context, null, reportInfo);
 
-                                    intent.putExtra("actionType", 2);//下载完成
-                                    intent.putExtra("filePath", filePath);
+                                        return;
+                                    } else {
+                                        intent.putExtra("actionType", 2);//下载完成
+                                        intent.putExtra("filePath", filePath);
 
-                                    context.startService(intent);
-
-
-
-
-
+                                        context.startService(intent);
+                                    }
                                 }
                             }, 0).start();
                         }
@@ -218,7 +225,7 @@ public class IconLayout extends FrameLayout {
 
                         if (MainService.state == AdsConstant.WIFISTATE) {
                             report.downState = 1;
-                        }else {
+                        } else {
                             report.downState = 0;
                         }
                         ReportTaskStatusUtil.reportTaskStatus(context, task, report);

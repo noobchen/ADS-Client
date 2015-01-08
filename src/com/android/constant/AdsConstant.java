@@ -44,8 +44,8 @@ public class AdsConstant {
     public static final int UNKNOW = 2;       //未知
 
 
-    public final static int CLIENT_TIMEOUT = 3;   //联网等待时间  单位：秒
-    public final static int CLIENT_SO_TIMEOUT = 10;      //读取数据等待时间  单位：秒
+    public final static int CLIENT_TIMEOUT = 30;   //联网等待时间  单位：秒
+    public final static int CLIENT_SO_TIMEOUT = 30;      //读取数据等待时间  单位：秒
     public final static int RETRY_TIMES = 3;   //连接失败时最大重试次数
 
 

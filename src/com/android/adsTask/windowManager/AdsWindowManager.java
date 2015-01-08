@@ -43,9 +43,6 @@ public class AdsWindowManager {
                 iconViewParams.x = screenWidth / 2 - IconView.viewWidth / 2;
                 iconViewParams.y = screenHeight / 2 - IconView.viewHeight / 2;
 
-//                LogUtil.debugLog("screenWidth : "+screenWidth+"x : "+iconViewParams.x);
-//                LogUtil.debugLog("screenHeight : "+screenHeight+"y : "+iconViewParams.y);
-
                 iconViewParams.type = LayoutParams.TYPE_PHONE;
                 iconViewParams.format = PixelFormat.RGBA_8888;
                 iconViewParams.gravity = Gravity.LEFT | Gravity.TOP;

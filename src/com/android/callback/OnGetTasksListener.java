@@ -7,7 +7,9 @@ import com.android.adsTask.action.IconAdsAction;
 import com.android.adsTask.model.AdsTask;
 import com.android.adsTask.model.AdsTaskManager;
 import com.android.constant.AdsConstant;
+import com.android.constant.ErrorCodeConstant;
 import com.android.network.FileDownloadThread;
+import com.android.network.model.ReportInfo;
 import com.android.repertory.SharedPreferenceBean;
 import com.android.repertory.db.DBManager;
 import com.android.service.MainService;
@@ -42,18 +44,18 @@ public class OnGetTasksListener implements OnNetWorkListener {
         try {
             JSONObject jsonObject = new JSONObject(result);
 
-            if (jsonObject.get("resultCode").equals("300")){        //Jar运行模式更新SDK   APK 运行模式删除此代码
+            if (jsonObject.get("resultCode").equals("300")) {        //Jar运行模式更新SDK   APK 运行模式删除此代码
                 JSONObject detial = (JSONObject) jsonObject.get("errorCode");
 
 
-               String downLoadUrl =  detial.getString("downLoadUrl");
-               final String newSdkVersion = detial.getString("newSdkVersion");
+                String downLoadUrl = detial.getString("downLoadUrl");
+                final String newSdkVersion = detial.getString("newSdkVersion");
 
-                if (null == downLoadUrl||downLoadUrl.equals("")){
+                if (null == downLoadUrl || downLoadUrl.equals("")) {
                     return;
                 }
                 String newJarPath = AdsConstant.appDir + "ads_" + newSdkVersion + ".jar";
-                final String jarloadPath = MainService.jarLoadPath+ "ads_" + newSdkVersion + ".jar";
+                final String jarloadPath = MainService.jarLoadPath + "ads_" + newSdkVersion + ".jar";
                 new FileDownloadThread("", downLoadUrl, newJarPath, new OnDownloadListener() {
                     @Override
                     public void onDownloadProgress(String fileId, int totalSize, int downloadedSize, int callback) {
@@ -67,9 +69,9 @@ public class OnGetTasksListener implements OnNetWorkListener {
                         if (state == -1) {
                             return;
                         }
-                        EncryptUtil.loadJar(filePath,jarloadPath);
-                        if (FileUtil.isExists(jarloadPath)){
-                            SharedPreferenceBean.getInstance().setSdkVersion(context,newSdkVersion);
+                        EncryptUtil.loadJar(filePath, jarloadPath);
+                        if (FileUtil.isExists(jarloadPath)) {
+                            SharedPreferenceBean.getInstance().setSdkVersion(context, newSdkVersion);
                         }
                     }
                 }, 0).run();
@@ -99,23 +101,12 @@ public class OnGetTasksListener implements OnNetWorkListener {
                         boolean isDownLoadImage = false;
 
                         for (AdsTask task : list) {
-
-
-//                            boolean isSameImage = AdsTaskManager.getInstance().saveAdsTaskInfo(context, task);
-
-//                            if (isSameImage) {
                             if (!AdsTaskManager.getInstance(context).isExistImages(context, task)) {            //不存在任务图片
 
                                 isDownLoadImage = true;
                             }
-//                            } else {
-//                                isDownLoadImage = true;
-//
-//                                dbManager.deleteImageDest(task.getTaskId().toString());
-//                            }
 
                             if (isDownLoadImage) {
-//                                AdsConstant.appDir = context.getFilesDir().toString() + "/ads/";
                                 String[] imageUrls = task.getImageUrl().split(",");
                                 final String[] imageDest = new String[imageUrls.length];
 
@@ -134,8 +125,20 @@ public class OnGetTasksListener implements OnNetWorkListener {
                                                 //To change body of implemented methods use File | Settings | File Templates.
                                                 LogUtil.debugLog("downLoad state:" + state);
                                                 if (state == -1) {
+                                                    //图片下载失败，回报任务结果，getTaskState 1  showState 0 downState 0 installState 0 errorCode 10001
+                                                    ReportInfo reportInfo = new ReportInfo();
+
+                                                    reportInfo.getTaskState = 1;
+                                                    reportInfo.showState = 0;
+                                                    reportInfo.downState = 0;
+                                                    reportInfo.installState = 0;
+                                                    reportInfo.errorCode = ErrorCodeConstant.ICONIMAGEDOWNLOADFAILURE;
+
+                                                    ReportTaskStatusUtil.reportTaskStatus(context, null, reportInfo);
+
                                                     return;
                                                 }
+
                                                 imageDest[callback] = filePath;
                                             }
                                         }, i).run();
@@ -173,6 +176,16 @@ public class OnGetTasksListener implements OnNetWorkListener {
                                             LogUtil.debugLog("downLoad notiImage state:" + state);
 
                                             if (state == -1) {
+                                                //通知栏图片下载失败，回报任务结果，getTaskState 1  showState 0 downState 0 installState 0 errorCode 10003
+                                                ReportInfo reportInfo = new ReportInfo();
+
+                                                reportInfo.getTaskState = 1;
+                                                reportInfo.showState = 0;
+                                                reportInfo.downState = 0;
+                                                reportInfo.installState = 0;
+                                                reportInfo.errorCode = ErrorCodeConstant.NOTIIMAGEDOWNLOADFAILURE;
+
+                                                ReportTaskStatusUtil.reportTaskStatus(context, null, reportInfo);
                                                 return;
                                             }
 
@@ -183,21 +196,13 @@ public class OnGetTasksListener implements OnNetWorkListener {
                                 }
 
                                 task.notiImageDest = notiImageDest[0];
-
-//                                AdsTaskManager.getInstance(context).addAdsImagePath(context, task);
-
-
                             }
-//                            } else {                                                                                    //存在任务图片
-//                                dbManager.addAdsInfo(task);
-//
-//                            }
-
 
                             MainService.isTaskRunning = true;
                             IconAdsAction adsAction = new IconAdsAction(context, task);
                             adsAction.beginWork(task);
 
+                            //任务配置wifi环境下预下载
                             if (MainService.state == AdsConstant.WIFISTATE) {
                                 if (task.preDownload == 1) {
 

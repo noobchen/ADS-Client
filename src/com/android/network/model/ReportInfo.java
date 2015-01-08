@@ -13,9 +13,10 @@ public class ReportInfo {
     public Long phoneIndex;
     public Integer taskId;
     public Integer reportTblId;
+    public Integer getTaskState;
     public Integer showState = 0;          //默认0
     public Integer downState = 0;          //默认0
     public Integer installState = 0;       //默认0
-
+    public String errorCode;
 
 }

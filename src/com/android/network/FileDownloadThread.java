@@ -77,44 +77,30 @@ public class FileDownloadThread extends Thread {
 
         try {
             URL url = new URL(fileUrl);
-//            if (AppData.isNeedProxy) {
-//                con = url.openConnection(getProxy());//设置代理
-//            } else {
             con = url.openConnection();
-//            }
             con.setAllowUserInteraction(true);
-//            conn.setRequestMethod("GET");
-            con.setConnectTimeout(6 * 1000);
-            //设置当前线程下载的起点，终点
-//            con.setRequestProperty("Range", "bytes=" + startPosition + "-" + endPosition);
-            //使用java中的RandomAccessFile 对文件进行随机读写操作
-
-
-
-
+            con.setConnectTimeout(30 * 1000);
             File file = new File(filePath);
             fos = new FileOutputStream(file);
-//            fos = new RandomAccessFile(file, "rw");
-            //设置开始写文件的位置
-//            fos.seek(startPosition);
+
             int contentLength = con.getContentLength();
             int baseSize = 20 * 1024;
             int notifySize = baseSize;
             int newSize = 0;
+
             if (contentLength > 0) {
                 notifySize = Math.min(contentLength / 20, baseSize);
             }
-//            T.debug(TAG, "runContentLength:" + contentLength);
+
             downloadSize = 0;
             isFinished = false;
 
 
             bis = new BufferedInputStream(con.getInputStream());
             int len = -1;
-            //开始循环以流的形式读写文件
+
             while ((len = bis.read(buff)) != -1) { //curPosition < endPosition
 
-//                fos.write(buff, 0, len);
                 fos.write(buff, 0, len);
                 downloadSize += len;
 
@@ -126,17 +112,21 @@ public class FileDownloadThread extends Thread {
                     }
                 }
             }
+
             //下载完成设为true
             fos.flush();
+
             isFinished = true;
+
             if (downloadListener != null) {
                 downloadListener.onDownloadFinished(1, fileId, filePath, callback);
             }
-//            T.debug(TAG, "run:downloadSuccess--------:" + downloadSize);
+
         } catch (Exception e) {
             closeConnect();
-//          	T.debug(TAG, "runExc:" + e.toString());
+
             e.printStackTrace();
+
             if (connectCount < 3) {
                 run();
             } else {
@@ -157,16 +147,7 @@ public class FileDownloadThread extends Thread {
                 bis.close();
                 bis = null;
             }
-//			if(con != null){
-//				con.;
-//				baos = null;
-//			}
-//			if(hc != null){
-//				hc.disconnect();
-//				hc = null;
-//			}				
         } catch (Exception e) {
-//            T.debug(TAG, "closeConnectExc:" + e.toString());
         }
     }
 

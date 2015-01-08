@@ -9,7 +9,7 @@ package com.android.constant;
  */
 public class UrlInfo {
 
-    public static String Host = "http://192.168.1.108:9008";                                                          //
+    public static String Host = "http://192.168.1.107:9008";                                                          //
 
     public static String registerUrl = Host+"/register";
 
