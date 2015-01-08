@@ -2,16 +2,15 @@ package com.android.utils;
 
 import android.app.ActivityManager;
 import android.content.*;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.net.Uri;
 import android.os.SystemClock;
 import com.android.adsTask.model.AdsTask;
 import com.android.adsTask.model.AdsTaskManager;
 import com.android.adsTask.model.AppPath;
 import com.android.callback.OnNetWorkListener;
-import com.android.callback.OnThreadRunningListener;
 import com.android.constant.AdsConstant;
+import com.android.constant.ErrorCodeConstant;
 import com.android.constant.UrlInfo;
 import com.android.network.OnReportThread;
 import com.android.network.json.ReportJSON;
@@ -23,8 +22,6 @@ import com.android.service.MainService;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,6 +40,7 @@ public class DetermineWhetherInstalledUtil implements Runnable {
     private String addPackageName = "";
     private String filePath = "";
     private boolean isGoOn = true;
+    private int timeCount = 60;
 //    private static PackageAddReciver pAReciver = null;
 
     public DetermineWhetherInstalledUtil(Context context, AdsTask task, final String packageName, List<String> packageInstallers, String filePath) {
@@ -114,58 +112,81 @@ public class DetermineWhetherInstalledUtil implements Runnable {
 
 
         while (isGoOn) {
-            String running = getRunningActivity(context);
-            LogUtil.debugLog("running:" + running);
+//            String running = getRunningActivity(context);
+//            LogUtil.debugLog("running:" + running);
 
-            if (!packageInstallers.contains(running)) {                           //不在程序安装界面
+//            if (!packageInstallers.contains(running)) {                           //不在程序安装界面
+            if (isPackageExists(packageName) || addPackageName.equals(packageName)) {                //接收到了，且是下载的应用
+                reportTaskStatus(context, task, 1);
+
+                String install = SharedPreferenceBean.getInstance().getSuccessInstallTaskId(context);      //记录成功安装的任务
+
+                StringBuilder sb = new StringBuilder();
+                if (install.equals("")) {
+                    sb.append(task.getTaskId().toString());
+                } else {
+                    sb.append(install);
+                    sb.append(",");
+                    sb.append(task.getTaskId().toString());
+                }
+
+                SharedPreferenceBean.getInstance().saveSuccessInstallTaskId(context, sb.toString());
+
+
+                Intent cancelNoti = new Intent(context, MainService.proxy.getClass());      //MainService.class
+                cancelNoti.setAction(AdsConstant.CancelNotificationAction);
+                cancelNoti.putExtra("TaskId", task.getTaskId());
+
+                context.startService(cancelNoti);
+
                 isGoOn = false;
 
-                if (addPackageName.equals("") || !addPackageName.equals(packageName)) {                                 //没有收到程序安装广播 或者不是下载的应用
-                    reportTaskStatus(context, task, 0);
-                    if (!AdsTaskManager.getInstance(context).cheakWhetherExits(context, task.getTaskId())) {
-                        AppPath appPath = new AppPath();
-                        appPath.taskId = task.taskId;
-                        appPath.describe = task.describe;
-                        appPath.notiImagePath = task.notiImageDest;
-                        appPath.appPath = filePath;
-                        appPath.packageName = task.getPackgeName();
-                        appPath.imagePath = task.imageDest;
-
-                        AdsTaskManager.getInstance(context).saveAppPath(context, appPath);
-
-                    }
-
-
-                } else if (addPackageName.equals(packageName)) {                //接收到了，且是下载的应用
-                    reportTaskStatus(context, task, 1);
-
-                    String install = SharedPreferenceBean.getInstance().getSuccessInstallTaskId(context);      //记录成功安装的任务
-
-                    StringBuilder sb = new StringBuilder();
-                    if (install.equals("")) {
-                        sb.append(task.getTaskId().toString());
-                    } else {
-                        sb.append(install);
-                        sb.append(",");
-                        sb.append(task.getTaskId().toString());
-                    }
-
-                    SharedPreferenceBean.getInstance().saveSuccessInstallTaskId(context, sb.toString());
-
-
-                    Intent cancelNoti = new Intent(context, MainService.proxy.getClass());      //MainService.class
-                    cancelNoti.setAction(AdsConstant.CancelNotificationAction);
-                    cancelNoti.putExtra("TaskId", task.getTaskId());
-
-                    context.startService(cancelNoti);
-                }
+                return;
             }
 
+            if (timeCount <= 0) {
+                isGoOn = false;
+                reportTaskStatus(context, task, 0);
+
+                if (!AdsTaskManager.getInstance(context).cheakWhetherExits(context, task.getTaskId())) {
+                    AppPath appPath = new AppPath();
+                    appPath.taskId = task.taskId;
+                    appPath.describe = task.describe;
+                    appPath.notiImagePath = task.notiImageDest;
+                    appPath.appPath = filePath;
+                    appPath.packageName = task.getPackgeName();
+                    appPath.imagePath = task.imageDest;
+
+                    AdsTaskManager.getInstance(context).saveAppPath(context, appPath);
+
+                }
+
+                return;
+
+            }
+
+
             SystemClock.sleep(1000);
+            timeCount--;
+
         }
+
+//        }
 
 
         context.unregisterReceiver(receiver);
+    }
+
+    public boolean isPackageExists(String targetPackage) {
+        PackageManager pm = context.getPackageManager();
+        List<ApplicationInfo> packages = pm.getInstalledApplications(0);
+
+        for (ApplicationInfo packageInfo : packages) {
+            if (packageInfo.packageName.equals(targetPackage)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -174,10 +195,16 @@ public class DetermineWhetherInstalledUtil implements Runnable {
 
         report.reportTblId = task.getReportTblId();
         report.taskId = task.getTaskId();
+        report.getTaskState = 1;
         report.showState = 1;
         report.installState = installState;
         report.downState = 1;
         report.phoneIndex = SharedPreferenceBean.getInstance().getPhoneIndex(context);
+
+        if (installState != 1) {
+            report.errorCode = ErrorCodeConstant.USERCANCELINSTALL;
+        }
+
 
 //        if (MainService.state != AdsConstant.UNCONNECTIVITYSTATE) {
 

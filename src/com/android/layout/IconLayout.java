@@ -2,44 +2,25 @@ package com.android.layout;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.*;
 import com.android.adsTask.model.AdsTask;
 import com.android.adsTask.model.AdsTaskManager;
 import com.android.adsTask.windowManager.AdsWindowManager;
 import com.android.callback.OnDownloadListener;
-import com.android.callback.OnNetWorkListener;
 import com.android.constant.AdsConstant;
 import com.android.constant.ErrorCodeConstant;
 import com.android.network.FileDownloadThread;
-import com.android.network.json.ReportJSON;
 import com.android.network.model.ReportInfo;
 import com.android.repertory.SharedPreferenceBean;
 import com.android.service.MainService;
 import com.android.utils.ApkPreDownloadUtil;
 import com.android.utils.ImageUtils;
-import com.android.utils.LogUtil;
 import com.android.utils.ReportTaskStatusUtil;
-import com.google.viewfactory.R;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created with IntelliJ IDEA.
@@ -204,23 +185,29 @@ public class IconLayout extends FrameLayout {
                         MainService.timer = null;
                     }
 
+                    //用户取消，回报任务结果，getTaskState 1  showState 1 downState 0 installState 0 errorCode 10002
                     if (task.getPreDownload() != 1) {
-
                         ReportInfo report = new ReportInfo();
 
                         report.reportTblId = task.getReportTblId();
                         report.taskId = task.getTaskId();
+                        report.getTaskState = 1;
                         report.showState = 1;
+                        report.downState = 0;
+                        report.installState = 0;
+                        report.errorCode = ErrorCodeConstant.USERCANCELDOWNLOAD;
                         report.phoneIndex = SharedPreferenceBean.getInstance().getPhoneIndex(context);
 
                         ReportTaskStatusUtil.reportTaskStatus(context, task, report);
                     } else {
-//                        String filePath = AdsTaskManager.getInstance(context).getApkFilePath(context, task.getTaskId());
                         ReportInfo report = new ReportInfo();
 
                         report.reportTblId = task.getReportTblId();
                         report.taskId = task.getTaskId();
+                        report.getTaskState = 1;
                         report.showState = 1;
+                        report.installState = 0;
+                        report.errorCode = ErrorCodeConstant.USERCANCELDOWNLOAD;
                         report.phoneIndex = SharedPreferenceBean.getInstance().getPhoneIndex(context);
 
                         if (MainService.state == AdsConstant.WIFISTATE) {
