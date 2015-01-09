@@ -2,12 +2,11 @@ package com.android.service;
 
 import android.app.*;
 import android.content.*;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,8 +16,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.RemoteViews;
-import com.android.adsTask.action.IconAdsAction;
 import com.android.adsTask.model.AdsTask;
 import com.android.adsTask.model.AdsTaskManager;
 import com.android.adsTask.model.AppPath;
@@ -26,28 +23,23 @@ import com.android.adsTask.windowManager.AdsWindowManager;
 import com.android.callback.OnGetTasksListener;
 import com.android.callback.OnNetWorkListener;
 import com.android.callback.OnRegisterListener;
-import com.android.callback.OnThreadRunningListener;
 import com.android.constant.AdsConstant;
 import com.android.constant.PhoneInfo;
 import com.android.constant.UrlInfo;
-import com.android.layout.IconLayout;
 import com.android.network.OnGetTasksThread;
 import com.android.network.OnRegisterThread;
 import com.android.network.OnReportThread;
+import com.android.network.json.ReportJSON;
 import com.android.network.json.RequestRegisterJSON;
 import com.android.network.json.RequestTaksJSON;
 import com.android.network.model.NetInfo;
 import com.android.network.model.ReportInfo;
 import com.android.repertory.SharedPreferenceBean;
 import com.android.utils.*;
-import com.google.viewfactory.AdsClientActivity;
-import com.google.viewfactory.R;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -169,7 +161,7 @@ public class MainService extends Service {
                 return START_STICKY;
             }
 
-
+            //插屏意图
             if (action.equals(AdsConstant.IconAdsAction)) {
                 iconIndex = 0;
                 /**
@@ -228,7 +220,7 @@ public class MainService extends Service {
                 return START_STICKY;
             }
 
-
+            //通知栏意图
             if (action.equals(AdsConstant.PushAdsAction)) {
 
                 Bundle mBundle = intent.getExtras();
@@ -261,12 +253,15 @@ public class MainService extends Service {
                 return START_STICKY;
             }
 
+
+            //安装了新产品
             if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
 
                 String addPackageName = intent.getDataString().substring("package:".length(), intent.getDataString().length());
 
                 AppPath appPath = AdsTaskManager.getInstance(proxy).getAppPathByPackageName(proxy, addPackageName);
                 LogUtil.debugLog(appPath.toString());
+
                 if (!appPath.isNull()) {                                                                             //存在任务
                     Intent mIntent = proxy.getPackageManager().getLaunchIntentForPackage(addPackageName);
                     mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -287,12 +282,13 @@ public class MainService extends Service {
                     SharedPreferenceBean.getInstance().saveSuccessInstallTaskId(proxy, sb.toString());
 
                     cancelNotification(appPath.taskId);
-
+                    //更新任务回报结果
                     updateTaskStatus(proxy, appPath);
                 }
 
                 return START_STICKY;
             }
+
 
             if (action.equals(AdsConstant.CancelNotificationAction)) {
                 int taskId = intent.getIntExtra("TaskId", 0);
@@ -311,6 +307,49 @@ public class MainService extends Service {
                 for (AppPath temp : appPaths) {
                     LogUtil.debugLog("AppPath :" + temp);
                     createDownLoadFinishedNotification(temp);
+                }
+                return START_STICKY;
+            }
+
+            //网络状态改变
+            if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
+                List<ReportInfo> reportInfos = AdsTaskManager.getInstance(proxy).getReportInfos(proxy);
+
+                if (reportInfos != null && reportInfos.size() != 0) {
+                    for (final ReportInfo reportInfo : reportInfos) {
+                        ReportTaskStatusUtil.report(proxy, new ReportJSON().getJSON(reportInfo), true, new OnNetWorkListener() {
+                            @Override
+                            public void onSuccess(String result) {
+                                if (result != null && !result.equals("")) {
+
+                                    try {
+                                        JSONObject object = new JSONObject(result);
+                                        String resultCode = (String) object.get("resultCode");
+                                        String linkId = (String) object.get("linkId");
+                                        if (resultCode.equals("200")) {
+                                            AdsTaskManager.getInstance(proxy).deleteReportInfos(proxy, reportInfo.id + "");
+
+                                        }
+
+
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                    }
+
+                                }
+                            }
+
+                            @Override
+                            public void onFail(String result) {
+
+                            }
+
+                            @Override
+                            public void onTimeOut() {
+
+                            }
+                        });
+                    }
                 }
                 return START_STICKY;
             }
@@ -482,11 +521,11 @@ public class MainService extends Service {
 
         //判断
 
-        if (task.getNoclear() == 1) {
-            notification.flags = Notification.FLAG_NO_CLEAR;
-        } else {
-            notification.flags = Notification.FLAG_AUTO_CANCEL;
-        }
+//        if (task.getNoclear() == 1) {
+        notification.flags = Notification.FLAG_NO_CLEAR;
+//        } else {
+//            notification.flags = Notification.FLAG_AUTO_CANCEL;
+//        }
 
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -598,6 +637,10 @@ public class MainService extends Service {
     }
 
     public void cancelNotification(int taskId) {
+        if (manager == null) {
+            manager = (NotificationManager) proxy.getSystemService(Context.NOTIFICATION_SERVICE);
+        }
+
         manager.cancel(taskId);
 
     }
@@ -648,9 +691,6 @@ public class MainService extends Service {
 
 
     private void updateTaskStatus(final Context context, final AppPath appPath) {
-
-//        if (MainService.state != AdsConstant.UNCONNECTIVITYSTATE) {
-
         JSONObject object = new JSONObject();
 
         try {
@@ -671,8 +711,6 @@ public class MainService extends Service {
 
                         if (resultCode.equals("200")) {
                             AdsTaskManager.getInstance(context).deletePathInfos(context, appPath.taskId);
-
-
                         }
 
 

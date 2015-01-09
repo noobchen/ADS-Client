@@ -205,10 +205,6 @@ public class DetermineWhetherInstalledUtil implements Runnable {
             report.errorCode = ErrorCodeConstant.USERCANCELINSTALL;
         }
 
-
-//        if (MainService.state != AdsConstant.UNCONNECTIVITYSTATE) {
-
-
         ReportTaskStatusUtil.report(context, new ReportJSON().getJSON(report), true, new OnNetWorkListener() {
             @Override
             public void onSuccess(String result) {
@@ -224,17 +220,13 @@ public class DetermineWhetherInstalledUtil implements Runnable {
                         LogUtil.debugLog("register resultCode:" + resultCode + "linkId: " + linkId);
 
                         if (!resultCode.equals("200")) {
-
                             AdsTaskManager.getInstance(context).saveReportInfo(context, report);
-//                                AdsTaskManager.getInstance().closeDB(context);
-
                         } else {
+                            //下载成功，未安装
                             if (installState == 0) {
                                 AdsTaskManager.getInstance(context).updateLinkId(context, task.getTaskId(), linkId);
                             }
                         }
-
-
                     } catch (JSONException e) {
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }

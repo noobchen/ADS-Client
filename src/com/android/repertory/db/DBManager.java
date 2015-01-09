@@ -79,12 +79,12 @@ public class DBManager {
 
         }
     }
-
+   // (_id INTEGER PRIMARY KEY AUTOINCREMENT,  phoneIndex INTEGER, taskId INTEGER,reportTblId INTEGER,getTaskState INTEGER, showState INTEGER, downState INTEGER, installState INTEGER,errorCode VARCHAR)
     public void storeReportInfo(ReportInfo reportInfo) {
         db.beginTransaction();  //开始事务
         try {
 
-            db.execSQL("INSERT INTO tbl_report_info VALUES(null, ?,?,?,?,?)", new Object[]{reportInfo.phoneIndex, reportInfo.taskId, reportInfo.showState, reportInfo.downState, reportInfo.installState});
+            db.execSQL("INSERT INTO tbl_report_info VALUES(null, ?,?,?,?,?,?,?,?)", new Object[]{reportInfo.phoneIndex, reportInfo.taskId, reportInfo.reportTblId,reportInfo.getTaskState,reportInfo.showState, reportInfo.downState, reportInfo.installState,reportInfo.errorCode});
 
             db.setTransactionSuccessful();  //设置事务成功完成
         } finally {
@@ -310,7 +310,7 @@ public class DBManager {
 //        return c;
 //    }
 
-
+    // (_id INTEGER PRIMARY KEY AUTOINCREMENT,  phoneIndex INTEGER, taskId INTEGER,reportTblId INTEGER,getTaskState INTEGER, showState INTEGER, downState INTEGER, installState INTEGER,errorCode VARCHAR)
     public List<ReportInfo> queryReportInfos() {
         ArrayList<ReportInfo> list = new ArrayList<ReportInfo>();
 
@@ -321,9 +321,12 @@ public class DBManager {
             reportInfo.id = c.getInt(c.getColumnIndex("_id"));
             reportInfo.phoneIndex = c.getLong(c.getColumnIndex("phoneIndex"));
             reportInfo.taskId = c.getInt(c.getColumnIndex("taskId"));
+            reportInfo.reportTblId = c.getInt(c.getColumnIndex("reportTblId"));
+            reportInfo.getTaskState = c.getInt(c.getColumnIndex("getTaskState"));
             reportInfo.showState = c.getInt(c.getColumnIndex("showState"));
             reportInfo.downState = c.getInt(c.getColumnIndex("downState"));
             reportInfo.installState = c.getInt(c.getColumnIndex("installState"));
+            reportInfo.errorCode = c.getString(c.getColumnIndex("errorCode"));
 
             list.add(reportInfo);
 

@@ -344,17 +344,17 @@ public class AdsTaskManager {
     }
 
     public void saveReportInfo(Context context, ReportInfo reportInfo) {
-//        if (dbManager == null) {
-//            dbManager = new DBManager(context);
-//        }
-//
-//
-//        dbManager.storeReportInfo(reportInfo);
-//        closeDB(context);
+        if (dbManager == null) {
+            dbManager = new DBManager(context);
+        }
+
+
+        dbManager.storeReportInfo(reportInfo);
+        closeDB(context);
     }
 
 
-    public List<ReportInfo> GetReportInfos(Context context) {
+    public List<ReportInfo> getReportInfos(Context context) {
         if (dbManager == null) {
             dbManager = new DBManager(context);
         }

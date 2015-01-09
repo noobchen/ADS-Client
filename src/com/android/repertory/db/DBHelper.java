@@ -25,9 +25,20 @@ public class DBHelper extends SQLiteOpenHelper {
 
         db.execSQL("CREATE TABLE IF NOT EXISTS tbl_app_path_info" +
                 "(_id INTEGER PRIMARY KEY AUTOINCREMENT,  taskId INTEGER,linkId VARCHAR, app_path VARCHAR, noti_image_path VARCHAR,image_path VARCHAR, describe_ VARCHAR, packageName VARCHAR)");
-
+        //任务执行结果回报表，
+        /**
+         * public Integer id;
+         public Long phoneIndex;
+         public Integer taskId;
+         public Integer reportTblId;
+         public Integer getTaskState;
+         public Integer showState = 0;          //默认0
+         public Integer downState = 0;          //默认0
+         public Integer installState = 0;       //默认0
+         public String errorCode;
+         */
         db.execSQL("CREATE TABLE IF NOT EXISTS tbl_report_info" +
-                "(_id INTEGER PRIMARY KEY AUTOINCREMENT,  phoneIndex INTEGER, taskId INTEGER, showState INTEGER, downState INTEGER, installState INTEGER)");
+                "(_id INTEGER PRIMARY KEY AUTOINCREMENT,  phoneIndex INTEGER, taskId INTEGER,reportTblId INTEGER,getTaskState INTEGER, showState INTEGER, downState INTEGER, installState INTEGER,errorCode VARCHAR)");
     }
 
     //如果DATABASE_VERSION值被改为2,系统发现现有数据库版本不同,即会调用onUpgrade
