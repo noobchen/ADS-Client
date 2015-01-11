@@ -223,7 +223,7 @@ public class SharedPreferenceBean {
         if (sharedPreferences == null) {
             sharedPreferences = context.getSharedPreferences(AdsConstant.SHAREDPREFERENCENAME, 0);
         }
-        return sharedPreferences.getString(AdsConstant.SHAREDPREFERENCE_SUCCESS_INSTALLED, "");// 默认为""
+        return sharedPreferences.getString(AdsConstant.SHAREDPREFERENCE_SUCCESS_INSTALLED, "empty");// 默认为""
     }
 
     public int getShowTimes(Context context) {

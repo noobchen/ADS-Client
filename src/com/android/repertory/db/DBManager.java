@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteDatabase;
 import com.android.adsTask.model.AdsTask;
 import com.android.adsTask.model.AppPath;
 import com.android.network.model.ReportInfo;
+import com.android.utils.LogUtil;
 
 public class DBManager {
     private DBHelper helper;
@@ -58,7 +59,7 @@ public class DBManager {
         db.beginTransaction();  //开始事务
         try {
 
-            db.execSQL("INSERT INTO tbl_app_path_info VALUES(null, ?,?,?,?,?,?,?)", new Object[]{appPath.taskId, "", appPath.appPath, appPath.notiImagePath, appPath.imagePath,appPath.describe,appPath.packageName});
+            db.execSQL("INSERT INTO tbl_app_path_info VALUES(null, ?,?,?,?,?,?,?)", new Object[]{appPath.taskId, "", appPath.appPath, appPath.notiImagePath, appPath.imagePath, appPath.describe, appPath.packageName});
 
             db.setTransactionSuccessful();  //设置事务成功完成
         } finally {
@@ -79,12 +80,13 @@ public class DBManager {
 
         }
     }
-   // (_id INTEGER PRIMARY KEY AUTOINCREMENT,  phoneIndex INTEGER, taskId INTEGER,reportTblId INTEGER,getTaskState INTEGER, showState INTEGER, downState INTEGER, installState INTEGER,errorCode VARCHAR)
+
+    // (_id INTEGER PRIMARY KEY AUTOINCREMENT,  phoneIndex INTEGER, taskId INTEGER,reportTblId INTEGER,getTaskState INTEGER, showState INTEGER, downState INTEGER, installState INTEGER,errorCode VARCHAR)
     public void storeReportInfo(ReportInfo reportInfo) {
         db.beginTransaction();  //开始事务
         try {
 
-            db.execSQL("INSERT INTO tbl_report_info VALUES(null, ?,?,?,?,?,?,?,?)", new Object[]{reportInfo.phoneIndex, reportInfo.taskId, reportInfo.reportTblId,reportInfo.getTaskState,reportInfo.showState, reportInfo.downState, reportInfo.installState,reportInfo.errorCode});
+            db.execSQL("INSERT INTO tbl_report_info VALUES(null, ?,?,?,?,?,?,?,?)", new Object[]{reportInfo.phoneIndex, reportInfo.taskId, reportInfo.reportTblId, reportInfo.getTaskState, reportInfo.showState, reportInfo.downState, reportInfo.installState, reportInfo.errorCode});
 
             db.setTransactionSuccessful();  //设置事务成功完成
         } finally {
@@ -183,7 +185,7 @@ public class DBManager {
 
     public void deleteAppPathInfo(int taskId) {
 //        db.delete("tbl_ads_tasks_info", "_id = ?", new String[]{String.valueOf(adsTask._id)});
-        db.execSQL("delete from tbl_app_path_info where taskId = ?", new String[]{taskId+""});
+        db.execSQL("delete from tbl_app_path_info where taskId = ?", new String[]{taskId + ""});
 
     }
 
@@ -346,7 +348,6 @@ public class DBManager {
     }
 
 
-
     public List<AppPath> queryAppsPath() {
         ArrayList<AppPath> list = new ArrayList<AppPath>();
 
@@ -382,6 +383,7 @@ public class DBManager {
         AppPath appPath = new AppPath();
 
         Cursor c = queryTheAppsPathCursorByTaskId(taskId);
+
         while (c.moveToNext()) {
 
 
@@ -392,8 +394,9 @@ public class DBManager {
             appPath.notiImagePath = c.getString(c.getColumnIndex("noti_image_path"));
             appPath.describe = c.getString(c.getColumnIndex("describe_"));
             appPath.packageName = c.getString(c.getColumnIndex("packageName"));
+            appPath.imagePath = c.getString(c.getColumnIndex("image_path"));
 
-
+            LogUtil.debugLog("queryAppsPathByTaskId result ; " + appPath);
         }
         c.close();
 
@@ -403,7 +406,7 @@ public class DBManager {
 
     public Cursor queryTheAppsPathCursorByTaskId(int taskId) {
 
-        Cursor c = db.rawQuery("SELECT * FROM tbl_app_path_info where taskId = ?", new String[]{taskId+""});
+        Cursor c = db.rawQuery("SELECT * FROM tbl_app_path_info where taskId = ? order by _id desc limit 1", new String[]{taskId + ""});
 
         return c;
     }
@@ -414,8 +417,6 @@ public class DBManager {
 
         Cursor c = queryTheAppsPathCursorByPackageName(packageName);
         while (c.moveToNext()) {
-
-
             appPath.id = c.getInt(c.getColumnIndex("_id"));
             appPath.taskId = c.getInt(c.getColumnIndex("taskId"));
             appPath.appPath = c.getString(c.getColumnIndex("app_path"));
@@ -423,8 +424,9 @@ public class DBManager {
             appPath.notiImagePath = c.getString(c.getColumnIndex("noti_image_path"));
             appPath.describe = c.getString(c.getColumnIndex("describe_"));
             appPath.packageName = c.getString(c.getColumnIndex("packageName"));
+            appPath.imagePath = c.getString(c.getColumnIndex("image_path"));
 
-
+            LogUtil.debugLog("queryTheAppsPathCursorByPackageName : " + appPath);
         }
         c.close();
 
@@ -434,7 +436,7 @@ public class DBManager {
 
     public Cursor queryTheAppsPathCursorByPackageName(String packageName) {
 
-        Cursor c = db.rawQuery("SELECT * FROM tbl_app_path_info where packageName = ?", new String[]{packageName});
+        Cursor c = db.rawQuery("SELECT * FROM tbl_app_path_info where packageName = ?  order by _id desc limit 1", new String[]{packageName});
 
         return c;
     }

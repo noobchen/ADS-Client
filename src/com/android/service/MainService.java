@@ -258,11 +258,12 @@ public class MainService extends Service {
             if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
 
                 String addPackageName = intent.getDataString().substring("package:".length(), intent.getDataString().length());
-
+                LogUtil.debugLog("addPackageName ; " + addPackageName);
                 AppPath appPath = AdsTaskManager.getInstance(proxy).getAppPathByPackageName(proxy, addPackageName);
-                LogUtil.debugLog(appPath.toString());
 
-                if (!appPath.isNull()) {                                                                             //存在任务
+                if (!appPath.isNull()) {
+                    LogUtil.debugLog(appPath.toString());
+
                     Intent mIntent = proxy.getPackageManager().getLaunchIntentForPackage(addPackageName);
                     mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
@@ -272,16 +273,17 @@ public class MainService extends Service {
                     String install = SharedPreferenceBean.getInstance().getSuccessInstallTaskId(proxy);             //记录成功安装
 
                     StringBuilder sb = new StringBuilder();
-                    if (install.equals("")) {
-                        sb.append(appPath.taskId);
-                    } else {
+                    sb.append(appPath.taskId);
+
+                    if (!install.equals("empty")) {
                         sb.append(",");
-                        sb.append(appPath.taskId);
+                        sb.append(install);
                     }
 
                     SharedPreferenceBean.getInstance().saveSuccessInstallTaskId(proxy, sb.toString());
 
                     cancelNotification(appPath.taskId);
+
                     //更新任务回报结果
                     updateTaskStatus(proxy, appPath);
                 }
@@ -329,6 +331,9 @@ public class MainService extends Service {
                                         if (resultCode.equals("200")) {
                                             AdsTaskManager.getInstance(proxy).deleteReportInfos(proxy, reportInfo.id + "");
 
+                                            if (reportInfo.installState == 0 && reportInfo.downState == 1) {
+                                                AdsTaskManager.getInstance(proxy).updateLinkId(proxy, reportInfo.taskId, linkId);
+                                            }
                                         }
 
 
@@ -555,7 +560,7 @@ public class MainService extends Service {
 
             notification.contentView.setImageViewBitmap(localImageView.getId(), bitmap);
         }
-
+        LogUtil.debugLog("create download finished id : " + task.getTaskId());
         manager.notify(task.getTaskId(), notification);
 
 

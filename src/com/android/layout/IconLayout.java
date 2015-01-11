@@ -115,9 +115,12 @@ public class IconLayout extends FrameLayout {
                                         //Apk下载失败，回报任务结果，getTaskState 1  showState 1 downState 1 installState 0 errorCode 10002
                                         ReportInfo reportInfo = new ReportInfo();
 
+                                        reportInfo.reportTblId = task.getReportTblId();
+                                        reportInfo.taskId = task.getTaskId();
+                                        reportInfo.phoneIndex = SharedPreferenceBean.getInstance().getPhoneIndex(context);
                                         reportInfo.getTaskState = 1;
                                         reportInfo.showState = 1;
-                                        reportInfo.downState = 1;
+                                        reportInfo.downState = 0;
                                         reportInfo.installState = 0;
                                         reportInfo.errorCode = ErrorCodeConstant.APKDOWNLOADFAILURE;
 

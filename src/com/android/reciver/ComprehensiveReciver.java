@@ -19,11 +19,12 @@ public class ComprehensiveReciver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         action = intent.getAction();
+        LogUtil.debugLog("receiver action : " + action);
+
         intent.setClass(context, MainService.class);  //MainService.class
         context.startService(intent);
 
     }
-
 
 
 }

@@ -34,6 +34,7 @@ public class ReportJSON implements RequestJSON {
             object.put("installState",reportInfo.installState);
             object.put("reportTblId",reportInfo.reportTblId);
             object.put("errorCode",reportInfo.errorCode);
+            object.put("getTaskState",reportInfo.getTaskState);
 
         } catch (JSONException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.

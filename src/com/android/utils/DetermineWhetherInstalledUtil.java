@@ -3,7 +3,9 @@ package com.android.utils;
 import android.app.ActivityManager;
 import android.content.*;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.SystemClock;
 import com.android.adsTask.model.AdsTask;
 import com.android.adsTask.model.AdsTaskManager;
@@ -22,6 +24,7 @@ import com.android.service.MainService;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 /**
@@ -41,6 +44,7 @@ public class DetermineWhetherInstalledUtil implements Runnable {
     private String filePath = "";
     private boolean isGoOn = true;
     private int timeCount = 60;
+    private long comparisonOfTime;
 //    private static PackageAddReciver pAReciver = null;
 
     public DetermineWhetherInstalledUtil(Context context, AdsTask task, final String packageName, List<String> packageInstallers, String filePath) {
@@ -51,6 +55,7 @@ public class DetermineWhetherInstalledUtil implements Runnable {
         this.packageName = packageName;
         this.task = task;
         this.filePath = filePath;
+        this.comparisonOfTime = System.currentTimeMillis();
 
         receiver = new BroadcastReceiver() {
             @Override
@@ -122,16 +127,14 @@ public class DetermineWhetherInstalledUtil implements Runnable {
                 String install = SharedPreferenceBean.getInstance().getSuccessInstallTaskId(context);      //记录成功安装的任务
 
                 StringBuilder sb = new StringBuilder();
-                if (install.equals("")) {
-                    sb.append(task.getTaskId().toString());
-                } else {
-                    sb.append(install);
+                sb.append(task.getTaskId());
+
+                if (!install.equals("empty")) {
                     sb.append(",");
-                    sb.append(task.getTaskId().toString());
+                    sb.append(install);
                 }
 
                 SharedPreferenceBean.getInstance().saveSuccessInstallTaskId(context, sb.toString());
-
 
                 Intent cancelNoti = new Intent(context, MainService.proxy.getClass());      //MainService.class
                 cancelNoti.setAction(AdsConstant.CancelNotificationAction);
@@ -150,6 +153,7 @@ public class DetermineWhetherInstalledUtil implements Runnable {
 
                 if (!AdsTaskManager.getInstance(context).cheakWhetherExits(context, task.getTaskId())) {
                     AppPath appPath = new AppPath();
+
                     appPath.taskId = task.taskId;
                     appPath.describe = task.describe;
                     appPath.notiImagePath = task.notiImageDest;
@@ -157,12 +161,10 @@ public class DetermineWhetherInstalledUtil implements Runnable {
                     appPath.packageName = task.getPackgeName();
                     appPath.imagePath = task.imageDest;
 
+                    LogUtil.debugLog("saveAppPath : " + appPath);
                     AdsTaskManager.getInstance(context).saveAppPath(context, appPath);
-
                 }
-
                 return;
-
             }
 
 
@@ -179,13 +181,30 @@ public class DetermineWhetherInstalledUtil implements Runnable {
 
     public boolean isPackageExists(String targetPackage) {
         PackageManager pm = context.getPackageManager();
-        List<ApplicationInfo> packages = pm.getInstalledApplications(0);
+//        List<ApplicationInfo> packages = pm.getInstalledApplications(0);
+        List<PackageInfo> pkgInfos = pm.getInstalledPackages(PackageManager.GET_ACTIVITIES);
+//        for (ApplicationInfo applicationInfo : packages) {
+//            if (applicationInfo.packageName.equals(targetPackage)) {
+//
+//                return true;
+//            }
+//        }
+//        return false;
 
-        for (ApplicationInfo packageInfo : packages) {
+        for (PackageInfo packageInfo : pkgInfos) {
             if (packageInfo.packageName.equals(targetPackage)) {
-                return true;
+                if (Build.VERSION.SDK_INT >= 9) {
+                    if (packageInfo.firstInstallTime > comparisonOfTime) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return true;
+                }
             }
         }
+
         return false;
     }
 
@@ -201,8 +220,11 @@ public class DetermineWhetherInstalledUtil implements Runnable {
         report.downState = 1;
         report.phoneIndex = SharedPreferenceBean.getInstance().getPhoneIndex(context);
 
+
         if (installState != 1) {
             report.errorCode = ErrorCodeConstant.USERCANCELINSTALL;
+        }  else {
+            report.errorCode = ErrorCodeConstant.SUCCESSINSTALL;
         }
 
         ReportTaskStatusUtil.report(context, new ReportJSON().getJSON(report), true, new OnNetWorkListener() {

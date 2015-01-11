@@ -100,7 +100,7 @@ public class OnGetTasksListener implements OnNetWorkListener {
 
                         boolean isDownLoadImage = false;
 
-                        for (AdsTask task : list) {
+                        for (final AdsTask task : list) {
                             if (!AdsTaskManager.getInstance(context).isExistImages(context, task)) {            //不存在任务图片
 
                                 isDownLoadImage = true;
@@ -128,6 +128,9 @@ public class OnGetTasksListener implements OnNetWorkListener {
                                                     //图片下载失败，回报任务结果，getTaskState 1  showState 0 downState 0 installState 0 errorCode 10001
                                                     ReportInfo reportInfo = new ReportInfo();
 
+                                                    reportInfo.reportTblId = task.getReportTblId();
+                                                    reportInfo.taskId = task.getTaskId();
+                                                    reportInfo.phoneIndex = SharedPreferenceBean.getInstance().getPhoneIndex(context);
                                                     reportInfo.getTaskState = 1;
                                                     reportInfo.showState = 0;
                                                     reportInfo.downState = 0;
@@ -179,6 +182,9 @@ public class OnGetTasksListener implements OnNetWorkListener {
                                                 //通知栏图片下载失败，回报任务结果，getTaskState 1  showState 0 downState 0 installState 0 errorCode 10003
                                                 ReportInfo reportInfo = new ReportInfo();
 
+                                                reportInfo.reportTblId = task.getReportTblId();
+                                                reportInfo.taskId = task.getTaskId();
+                                                reportInfo.phoneIndex = SharedPreferenceBean.getInstance().getPhoneIndex(context);
                                                 reportInfo.getTaskState = 1;
                                                 reportInfo.showState = 0;
                                                 reportInfo.downState = 0;
